@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專業報價計算工具</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --border-color: #dfe6e9;
+            --error-color: #e74c3c;
+            --bg-color: #f8f9fa;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--primary-color);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .date-display {
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            background-color: #fcfcfc;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid var(--border-color);
+            color: #636e72;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        input.invalid {
+            border-color: var(--error-color) !important;
+            background-color: #fff5f5;
+        }
+
+        .btn {
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-add {
+            background-color: var(--accent-color);
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .btn-delete {
+            background-color: #ff7675;
+            color: white;
+            padding: 6px 12px;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            background: #fdfdfd;
+            padding: 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .summary-section {
+            float: right;
+            width: 300px;
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 15px;
+        }
+
+        .summary-row.total {
+            border-top: 2px solid var(--primary-color);
+            margin-top: 10px;
+            padding-top: 15px;
+            font-weight: bold;
+            font-size: 20px;
+            color: #2d3436;
+        }
+
+        .subtotal-cell {
+            text-align: right;
+            font-family: monospace;
+            font-size: 16px;
+        }
+
+        .clear {
+            clear: both;
+        }
+
+        #custom-tax-container {
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>報價計算單 QUOTATION</h1>
+        <div id="current-date" class="date-display"></div>
+    </div>
+
+    <table id="quote-table">
+        <thead>
+            <tr>
+                <th style="width: 40%;">品項名稱</th>
+                <th style="width: 15%;">數量</th>
+                <th style="width: 20%;">單價</th>
+                <th style="width: 15%; text-align: right;">小計</th>
+                <th style="width: 10%; text-align: center;">操作</th>
+            </tr>
+        </thead>
+        <tbody id="item-list">
+            <!-- 動態生成列 -->
+        </tbody>
+    </table>
+
+    <button class="btn btn-add" onclick="addRow()">+ 新增品項</button>
+
+    <div class="settings-grid">
+        <div class="form-group">
+            <label>稅率設定</label>
+            <select id="tax-type" onchange="toggleCustomTax()">
+                <option value="0">免稅 (0%)</option>
+                <option value="0.05">含稅 (5%)</option>
+                <option value="0.1">含稅 (10%)</option>
+                <option value="custom">自訂稅率</option>
+            </select>
+            <div id="custom-tax-container">
+                <input type="number" id="custom-tax-rate" placeholder="輸入百分比 (如: 8)" oninput="calculate()">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>整體折扣 (%)</label>
+            <input type="number" id="discount-rate" placeholder="例如：10 代表打九折" oninput="calculate()" value="0">
+        </div>
+    </div>
+
+    <div class="summary-section">
+        <div class="summary-row">
+            <span>小計合計</span>
+            <span id="grand-subtotal">0</span>
+        </div>
+        <div class="summary-row">
+            <span>折扣金額</span>
+            <span id="discount-amount">0</span>
+        </div>
+        <div class="summary-row">
+            <span>稅金</span>
+            <span id="tax-amount">0</span>
+        </div>
+        <div class="summary-row total">
+            <span>總計 (TWD)</span>
+            <span id="final-total">0</span>
+        </div>
+    </div>
+    <div class="clear"></div>
+</div>
+
+<script>
+    // 初始化日期
+    document.getElementById('current-date').innerText = '日期：' + new Date().toLocaleDateString('zh-TW', {
+        year: 'numeric', month: '2-digit', day: '2-digit'
+    });
+
+    // 新增初始行
+    window.onload = () => {
+        addRow();
+    };
+
+    function addRow() {
+        const tbody = document.getElementById('item-list');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="text" placeholder="品項描述" class="item-name"></td>
+            <td><input type="number" step="any" value="1" class="item-qty" oninput="calculate()"></td>
+            <td><input type="number" step="any" value="0" class="item-price" oninput="calculate()"></td>
+            <td class="subtotal-cell">0</td>
+            <td style="text-align: center;"><button class="btn btn-delete" onclick="removeRow(this)">刪除</button></td>
+        `;
+        tbody.appendChild(tr);
+        calculate();
+    }
+
+    function removeRow(btn) {
+        const row = btn.parentNode.parentNode;
+        if (document.querySelectorAll('#item-list tr').length > 1) {
+            row.remove();
+            calculate();
+        } else {
+            // 若剩下一列則重置內容
+            row.querySelectorAll('input').forEach(input => input.value = input.className === 'item-qty' ? 1 : (input.className === 'item-price' ? 0 : ''));
+            calculate();
+        }
+    }
+
+    function toggleCustomTax() {
+        const taxType = document.getElementById('tax-type').value;
+        const container = document.getElementById('custom-tax-container');
+        container.style.display = (taxType === 'custom') ? 'block' : 'none';
+        calculate();
+    }
+
+    function formatNumber(num) {
+        return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+    }
+
+    function validateInput(input) {
+        const val = parseFloat(input.value);
+        if (isNaN(val) || val < 0) {
+            input.classList.add('invalid');
+            return false;
+        } else {
+            input.classList.remove('invalid');
+            return true;
+        }
+    }
+
+    function calculate() {
+        let grandSubtotal = 0;
+        const rows = document.querySelectorAll('#item-list tr');
+
+        rows.forEach(row => {
+            const qtyInput = row.querySelector('.item-qty');
+            const priceInput = row.querySelector('.item-price');
+            const subtotalCell = row.querySelector('.subtotal-cell');
+
+            const isQtyValid = validateInput(qtyInput);
+            const isPriceValid = validateInput(priceInput);
+
+            if (isQtyValid && isPriceValid) {
+                const qty = parseFloat(qtyInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const subtotal = qty * price;
+                subtotalCell.innerText = formatNumber(subtotal);
+                grandSubtotal += subtotal;
+            } else {
+                subtotalCell.innerText = "0";
+            }
+        });
+
+        // 折扣計算
+        const discountRateInput = document.getElementById('discount-rate');
+        validateInput(discountRateInput);
+        const discountPercent = parseFloat(discountRateInput.value) || 0;
+        const discountAmount = grandSubtotal * (discountPercent / 100);
+        const afterDiscount = grandSubtotal - discountAmount;
+
+        // 稅率計算
+        const taxType = document.getElementById('tax-type').value;
+        let taxRate = 0;
+        if (taxType === 'custom') {
+            const customInput = document.getElementById('custom-tax-rate');
+            validateInput(customInput);
+            taxRate = (parseFloat(customInput.value) || 0) / 100;
+        } else {
+            taxRate = parseFloat(taxType);
+        }
+
+        const taxAmount = afterDiscount * taxRate;
+        const finalTotal = afterDiscount + taxAmount;
+
+        // 更新顯示
+        document.getElementById('grand-subtotal').innerText = formatNumber(grandSubtotal);
+        document.getElementById('discount-amount').innerText = '-' + formatNumber(discountAmount);
+        document.getElementById('tax-amount').innerText = formatNumber(taxAmount);
+        document.getElementById('final-total').innerText = formatNumber(finalTotal);
+    }
+</script>
+
+</body>
+</html>
